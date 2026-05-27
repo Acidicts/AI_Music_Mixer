@@ -1,9 +1,29 @@
 const { app, BrowserWindow, ipcMain, protocol } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { execFile: execFileCb, execFileSync } = require('child_process');
 const { promisify } = require('util');
 const execFile = promisify(execFileCb);
 const YTMusic = require('ytmusic-api').default || require('ytmusic-api');
+
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim();
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  }
+}
+
+const API_KEY = process.env.SONGBPMAPI_KEY;
+const GETSONG_BASE = 'https://api.getsong.co';
 function findYtDlp() {
   const paths = ['yt-dlp', '/opt/homebrew/bin/yt-dlp', '/usr/local/bin/yt-dlp', '/usr/bin/yt-dlp'];
   for (const p of paths) {
@@ -111,6 +131,32 @@ ipcMain.handle('get-track-info', async (_event, videoId) => {
       duration: '--:--',
       durationSeconds: 0,
     };
+  }
+});
+
+ipcMain.handle('fetch-song-metadata', async (_event, title, artist) => {
+  if (!API_KEY) return null;
+  try {
+    const lookup = `${encodeURIComponent(title)} ${encodeURIComponent(artist || '')}`;
+    const url = `${GETSONG_BASE}/search/?api_key=${API_KEY}&type=song&lookup=${lookup}&limit=3`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = data.search || [];
+    if (results.length === 0) return null;
+
+    const best = results[0];
+    if (!best.tempo && !best.key_of) return null;
+
+    return {
+      bpm: parseInt(best.tempo) || 0,
+      key: best.key_of || null,
+      danceability: best.danceability ?? null,
+      acousticness: best.acousticness ?? null,
+    };
+  } catch (err) {
+    console.error('GetSong API error:', err.message);
+    return null;
   }
 });
 

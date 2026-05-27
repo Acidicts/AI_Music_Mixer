@@ -62,6 +62,22 @@ class MusicSource {
     return results;
   }
 
+  async fetchSongMetadata(title, artist) {
+    if (!window.electronAPI?.fetchSongMetadata) return null;
+    const cacheKey = `meta:${title}|${artist}`.toLowerCase();
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
+    try {
+      const result = await window.electronAPI.fetchSongMetadata(title, artist);
+      if (result) {
+        this.cache.set(cacheKey, result);
+        setTimeout(() => this.cache.delete(cacheKey), 300000);
+      }
+      return result;
+    } catch {
+      return null;
+    }
+  }
+
   isAvailable() {
     return typeof window.electronAPI !== 'undefined';
   }

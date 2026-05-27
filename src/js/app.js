@@ -487,6 +487,13 @@ class App {
         this.updateProgress(0, this.audioEngine.audioElement.duration || 0);
         this.saveResumeState(0);
       });
+
+      const meta = await this.musicSource.fetchSongMetadata(track.title, track.artist);
+      if (meta) {
+        if (meta.bpm) this.dom.bpmDisplay.textContent = meta.bpm;
+        if (meta.key) this.dom.keyDisplay.textContent = meta.key;
+        this._apiMeta = meta;
+      }
     } catch (err) {
       console.error(`Failed to load track "${track.title}" (${track.videoId}):`, err.message || err);
       this.addMessage(`⚠️ Could not load "${track.title}". Skipping...`, 'ai');
@@ -638,10 +645,12 @@ class App {
     this.dom.ctrlTimeCurrent.textContent = this.formatTime(current);
     this.dom.ctrlTimeTotal.textContent = this.formatTime(duration);
 
-    const bpm = this.metadataAnalyzer.getBPM();
-    const key = this.metadataAnalyzer.getKey();
-    if (bpm > 0) this.dom.bpmDisplay.textContent = bpm;
-    this.dom.keyDisplay.textContent = key;
+    if (!this._apiMeta) {
+      const bpm = this.metadataAnalyzer.getBPM();
+      const key = this.metadataAnalyzer.getKey();
+      if (bpm > 0) this.dom.bpmDisplay.textContent = bpm;
+      this.dom.keyDisplay.textContent = key;
+    }
   }
 
   formatTime(seconds) {
