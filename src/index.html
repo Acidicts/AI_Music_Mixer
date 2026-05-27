@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Music Mixer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="main-grid">
+      <!-- Left Column -->
+      <div id="left-col" class="vsplit-left">
+        <div id="left-top" class="hsplit-top">
+          <div id="visualizer-container">
+            <canvas id="visualizer"></canvas>
+            <div id="now-playing-badge">
+              <span id="np-title">No track loaded</span>
+              <span id="np-artist"></span>
+            </div>
+          </div>
+        </div>
+        <div class="divider-h" id="divider-left"></div>
+        <div id="left-bottom" class="hsplit-bottom">
+          <div id="chat-container">
+            <div id="chat-messages">
+              <div class="msg msg-ai">
+                <span class="msg-avatar">🎧</span>
+                <div class="msg-content">
+                  <span class="msg-name">AI Mix Master</span>
+                  <p>Hey! I'm your AI DJ. Tell me what vibe you're feeling — dark techno, 80s synthwave, chill lo-fi, anything goes! I learn your taste as you like/dislike tracks and listen. Check your <strong>📊 Profile</strong> to see what I know about you.</p>
+                </div>
+              </div>
+            </div>
+            <div id="chat-input-area">
+              <div id="chat-filter-bar">
+                <button class="filter-chip" data-filter="acapella">🎤 Acapella</button>
+                <button class="filter-chip" data-filter="covers">🔄 Covers</button>
+                <button class="filter-chip" data-filter="remix">🔄 Remix</button>
+                <button class="filter-chip" data-filter="live">🎸 Live</button>
+              </div>
+              <div id="chat-input-row">
+                <input type="text" id="chat-input" placeholder="Ask the AI DJ to play something..." autofocus />
+                <button id="chat-send" title="Send">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider-v" id="divider-main"></div>
+
+      <!-- Right Column -->
+      <div id="right-col" class="vsplit-right">
+        <div id="right-top" class="hsplit-top">
+          <div id="album-art-container">
+            <img id="album-art" src="" alt="Album Art" />
+            <div id="metadata-overlay">
+              <div class="metric">
+                <span class="metric-label">BPM</span>
+                <span class="metric-value" id="bpm-display">--</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">KEY</span>
+                <span class="metric-value" id="key-display">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="divider-h" id="divider-right"></div>
+        <div id="right-bottom" class="hsplit-bottom">
+          <div id="queue-container">
+            <div class="queue-section" id="now-playing-section">
+              <h3>Now Playing</h3>
+              <div id="now-playing-track">
+                <span class="queue-empty">Nothing playing</span>
+              </div>
+              <div id="np-actions">
+                <button id="like-btn" title="Like this track" class="np-action-btn">👍</button>
+                <button id="dislike-btn" title="Dislike this track" class="np-action-btn">👎</button>
+              </div>
+            </div>
+            <div class="queue-section" id="user-queue-section">
+              <h3>Your Requests <span class="badge user-badge">You</span></h3>
+              <ul id="user-queue-list"></ul>
+            </div>
+            <div class="queue-section" id="ai-queue-section">
+              <h3>AI Suggestions <span class="badge">AI</span></h3>
+              <ul id="ai-queue-list"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Control Bar -->
+    <div id="control-bar">
+
+      <!-- Left: Track Info & Quick Actions -->
+      <div id="ctrl-left">
+        <img id="ctrl-album-art" src="" alt="" />
+        <div id="ctrl-track-info">
+          <span id="ctrl-title">No track</span>
+          <span id="ctrl-artist"></span>
+        </div>
+        <div id="ctrl-actions">
+          <button id="ctrl-like-btn" title="Like">♡</button>
+          <button id="ctrl-fx-btn" title="Audio settings">⚊</button>
+          <button id="ctrl-ban-btn" title="Skip this artist">⊘</button>
+        </div>
+      </div>
+
+      <!-- Center: Playback Controls & Timeline -->
+      <div id="ctrl-center">
+        <div id="ctrl-playback">
+          <button class="ctrl-pb-btn" title="Shuffle" disabled>🔀</button>
+          <button id="ctrl-rewind-btn" class="ctrl-pb-btn" title="-10s">↺10</button>
+          <button id="ctrl-prev-btn" class="ctrl-pb-btn" title="Previous">⏮</button>
+          <button id="ctrl-play-btn" title="Play/Pause">▶</button>
+          <button id="ctrl-next-btn" class="ctrl-pb-btn" title="Next">⏭</button>
+          <button id="ctrl-forward-btn" class="ctrl-pb-btn" title="+10s">↻10</button>
+          <button class="ctrl-pb-btn" title="Repeat" disabled>🔁</button>
+        </div>
+        <div id="ctrl-timeline">
+          <span id="ctrl-time-current">0:00</span>
+          <div id="ctrl-progress-track">
+            <div id="ctrl-progress-fill"></div>
+            <div id="ctrl-progress-thumb"></div>
+          </div>
+          <span id="ctrl-time-total">0:00</span>
+        </div>
+      </div>
+
+      <!-- Right: Utility & Volume -->
+      <div id="ctrl-right">
+        <button class="ctrl-util-btn" title="Lyrics" disabled>🎤</button>
+        <button id="ctrl-queue-btn" class="ctrl-util-btn" title="Queue">☰</button>
+        <button class="ctrl-util-btn" title="Cast" disabled>🖥</button>
+        <div id="ctrl-volume">
+          <button id="ctrl-vol-btn" title="Volume">🔊</button>
+          <div id="ctrl-vol-track">
+            <div id="ctrl-vol-fill"></div>
+            <input type="range" id="ctrl-vol-slider" min="0" max="100" value="80" />
+          </div>
+        </div>
+        <button class="ctrl-util-btn" title="Mini-player" disabled>▣</button>
+        <button class="ctrl-util-btn" title="Full screen" disabled>⛶</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Profile Panel (overlays right column) -->
+  <div id="profile-panel">
+    <div id="profile-header">
+      <h2>Your Music Profile</h2>
+      <button id="profile-close-btn" title="Close">✕</button>
+    </div>
+    <div id="profile-stats">
+      <div class="profile-stat-card">
+        <span class="ps-value" id="ps-tracks">0</span>
+        <span class="ps-label">Tracks</span>
+      </div>
+      <div class="profile-stat-card">
+        <span class="ps-value" id="ps-hours">0h</span>
+        <span class="ps-label">Listened</span>
+      </div>
+      <div class="profile-stat-card">
+        <span class="ps-value" id="ps-completion">0%</span>
+        <span class="ps-label">Completion</span>
+      </div>
+      <div class="profile-stat-card">
+        <span class="ps-value" id="ps-likes">0</span>
+        <span class="ps-label">Likes</span>
+      </div>
+    </div>
+    <div id="profile-genres">
+      <h3>Top Genres</h3>
+      <div id="profile-genre-list"></div>
+    </div>
+    <div id="profile-artists">
+      <h3>Top Artists</h3>
+      <div id="profile-artist-list"></div>
+    </div>
+    <div id="profile-preferences">
+      <h3>Preferences</h3>
+      <div id="profile-prefs-content"></div>
+    </div>
+    <div id="profile-footer">
+      <button id="profile-clear-btn" title="Reset all profile data">Clear Profile Data</button>
+    </div>
+  </div>
+
+  <script src="js/audio-engine.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/user-profile.js"></script>
+  <script src="js/ollama-client.js"></script>
+  <script src="js/music-source.js"></script>
+  <script src="js/queue-manager.js"></script>
+  <script src="js/metadata-analyzer.js"></script>
+  <script src="js/markdown.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
